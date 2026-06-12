@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Front-Office Economic Optimizer</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-dark: #1e293b;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-gold: #f59e0b;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 20px;
+        }
+
+        h1 { margin-bottom: 5px; color: var(--accent-blue); }
+        .subtitle { color: var(--text-muted); font-size: 1.1rem; }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background-color: var(--card-dark);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #475569;
+            background-color: #0f172a;
+            color: white;
+            font-size: 1.1rem;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--accent-blue);
+            color: #0f172a;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        .metric-explanation {
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-top: 1px solid #334155;
+            padding-top: 15px;
+        }
+
+        .results-header {
+            background: #111827;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-green);
+            margin-bottom: 20px;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .analytic-box {
+            background: #1e293b;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+        }
+
+        .analytic-val {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--accent-gold);
+        }
+
+        .player-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-dark);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #334155;
+        }
+
+        .player-info h3 { margin: 0 0 5px 0; font-size: 1.2rem; }
+        .badge {
+            background-color: #334155;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .player-stats { text-align: right; }
+        .rating-display {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--accent-green);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>NBA Front-Office Economic Optimizer</h1>
+        <div class="subtitle">Exact Roster Combinatorics & Postseason Predictive Simulation Engine</div>
+    </header>
+
+    <div class="dashboard">
+        <div class="panel">
+            <h2>Financial Directives</h2>
+            <div class="input-group">
+                <label for="budget">Roster Budget Cap (Millions $)</label>
+                <input type="number" id="budget" value="190" min="40" max="350">
+            </div>
+            <button onclick="runOptimization()">Generate & Simulate</button>
+
+            <div class="metric-explanation">
+                <h3>System Logistics</h3>
+                <p><strong>Roster Alignment:</strong> Dynamically scans thousands of possibilities to output a mathematically perfect lineup containing exactly 2 Guards, 2 Forwards, and 1 Center.</p>
+                <p><strong>CBA Threshold Safety:</strong> Accounts for dynamic roster construction risks if your allocation budget extends into tax tiers.</p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Optimized Roster & Postseason Analytics</h2>
+            <div id="summary-banner" class="results-header">
+                <div>Enter a capital threshold allocation target to evaluate lineup efficiency metrics.</div>
+            </div>
+            <div id="roster-output"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // System Database: 34 Active Assets (Including Yesterdays KAT & OG Updates)
+    const playerPool = [
+        { name: "Nikola Jokic", pos: "C", salary: 55.2, ws: 14.8, perf: 98, utility: 8.5 },
+        { name: "Shai Gilgeous-Alexander", pos: "G", salary: 38.3, ws: 15.2, perf: 95, utility: 9.2 },
+        { name: "Victor Wembanyama", pos: "C", salary: 14.0, ws: 11.5, perf: 88, utility: 10.0 },
+        { name: "Jayson Tatum", pos: "F", salary: 54.1, ws: 11.2, perf: 92, utility: 7.8 },
+        { name: "Karl-Anthony Towns", pos: "C", salary: 53.1, ws: 10.8, perf: 91, utility: 8.0 },
+        { name: "OG Anunoby", pos: "F", salary: 39.6, ws: 9.5, perf: 88, utility: 8.4 },
+        { name: "Cooper Flagg", pos: "F", salary: 12.5, ws: 8.5, perf: 80, utility: 9.5 },
+        { name: "Jalen Brunson", pos: "G", salary: 34.9, ws: 10.1, perf: 89, utility: 8.9 },
+        { name: "Alex Caruso", pos: "G", salary: 13.5, ws: 6.4, perf: 78, utility: 8.2 },
+        { name: "Trayce Jackson-Davis", pos: "C", salary: 2.2, ws: 4.5, perf: 70, utility: 9.0 },
+        { name: "Luka Doncic", pos: "G", salary: 46.0, ws: 12.5, perf: 94, utility: 8.3 },
+        { name: "Giannis Antetokounmpo", pos: "F", salary: 48.8, ws: 12.0, perf: 96, utility: 8.0 },
+        { name: "Anthony Edwards", pos: "G", salary: 35.3, ws: 9.8, perf: 90, utility: 8.7 },
+        { name: "Tyrese Haliburton", pos: "G", salary: 35.3, ws: 8.9, perf: 87, utility: 8.2 },
+        { name: "Joel Embiid", pos: "C", salary: 51.4, ws: 10.5, perf: 93, utility: 7.5 },
+        { name: "Kevin Durant", pos: "F", salary: 51.2, ws: 9.0, perf: 91, utility: 7.2 },
+        { name: "LeBron James", pos: "F", salary: 48.7, ws: 8.5, perf: 89, utility: 7.0 },
+        { name: "Stephen Curry", pos: "G", salary: 59.6, ws: 9.1, perf: 92, utility: 6.8 },
+        { name: "Chet Holmgren", pos: "C", salary: 10.9, ws: 8.8, perf: 84, utility: 9.4 },
+        { name: "Paolo Banchero", pos: "F", salary: 12.2, ws: 7.8, perf: 83, utility: 9.1 },
+        { name: "Domantas Sabonis", pos: "C", salary: 41.8, ws: 11.0, perf: 89, utility: 8.1 },
+        { name: "Tyrese Maxey", pos: "G", salary: 35.1, ws: 8.2, perf: 86, utility: 8.0 },
+        { name: "Scottie Barnes", pos: "F", salary: 35.1, ws: 8.0, perf: 85, utility: 7.9 },
+        { name: "Mikal Bridges", pos: "F", salary: 24.9, ws: 6.2, perf: 80, utility: 7.5 },
+        { name: "Derrick White", pos: "G", salary: 28.1, ws: 7.8, perf: 83, utility: 8.3 },
+        { name: "Herb Jones", pos: "F", salary: 14.5, ws: 5.9, perf: 77, utility: 8.0 },
+        { name: "Austin Reaves", pos: "G", salary: 13.9, ws: 6.0, perf: 78, utility: 8.1 },
+        { name: "Naz Reid", pos: "F", salary: 15.0, ws: 5.5, perf: 76, utility: 7.8 },
+        { name: "Alperen Sengun", pos: "C", salary: 35.1, ws: 9.5, perf: 86, utility: 8.2 },
+        { name: "Jalen Williams", pos: "F", salary: 4.7, ws: 8.2, perf: 84, utility: 9.8 },
+        { name: "Jaime Jaquez Jr.", pos: "F", salary: 3.7, ws: 4.8, perf: 73, utility: 8.5 },
+        { name: "Dereck Lively II", pos: "C", salary: 5.3, ws: 6.5, perf: 78, utility: 9.2 },
+        { name: "Amen Thompson", pos: "G", salary: 9.2, ws: 6.0, perf: 76, utility: 8.4 },
+        { name: "Donte DiVincenzo", pos: "G", salary: 11.4, ws: 5.8, perf: 77, utility: 7.9 }
+    ];
+
+    const maxWs = Math.max(...playerPool.map(p => p.ws));
+    const maxPerf = Math.max(...playerPool.map(p => p.perf));
+    const maxUtility = Math.max(...playerPool.map(p => p.utility));
+    const posWeights = { "C": 0.95, "F": 0.90, "G": 0.85 };
+
+    playerPool.forEach(p => {
+        const nWs = p.ws / maxWs;
+        const nPerf = p.perf / maxPerf;
+        const nUtil = p.utility / maxUtility;
+        const nPos = posWeights[p.pos];
+        
+        const score = (0.35 * nWs) + (0.25 * nPerf) + (0.25 * nUtil) + (0.15 * nPos);
+        p.overallRating = Math.round((score * 9 + 1) * 10) / 10;
+    });
+
+    function runOptimization() {
+        const budgetLimit = parseFloat(document.getElementById('budget').value);
+        
+        // Group players to execute rigorous sub-space combination matching
+        const guards = playerPool.filter(p => p.pos === "G");
+        const forwards = playerPool.filter(p => p.pos === "F");
+        const centers = playerPool.filter(p => p.pos === "C");
+
+        let bestRoster = null;
+        let maxTotalRating = -1;
+        let optimalPayroll = 0;
+
+        // Multi-layered combinatorial search matrix (Guards C(G,2) x Forwards C(F,2) x Centers C(C,1))
+        for (let i = 0; i < guards.length; i++) {
+            for (let j = i + 1; j < guards.length; j++) {
+                for (let k = 0; k < forwards.length; k++) {
+                    for (let l = k + 1; l < forwards.length; l++) {
+                        for (let m = 0; m < centers.length; m++) {
+                            
+                            let currentCombination = [guards[i], guards[j], forwards[k], forwards[l], centers[m]];
+                            let totalSalary = currentCombination.reduce((sum, p) => sum + p.salary, 0);
+                            
+                            if (totalSalary <= budgetLimit) {
+                                let totalRating = currentCombination.reduce((sum, p) => sum + p.overallRating, 0);
+                                
+                                // Maximization target evaluation
+                                if (totalRating > maxTotalRating) {
+                                    maxTotalRating = totalRating;
+                                    bestRoster = currentCombination;
+                                    optimalPayroll = totalSalary;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        displayResults(bestRoster, optimalPayroll, budgetLimit);
+    }
+
+    function generateSimulation(roster) {
+        let totalWs = roster.reduce((sum, p) => sum + p.ws, 0);
+        let avgRating = roster.reduce((sum, p) => sum + p.overallRating, 0) / 5;
+        
+        // Predictive multi-variable regression equation mapping regular season distribution
+        let wins = Math.round(18 + (totalWs * 0.90) + (avgRating * 0.95));
+        if (wins > 72) wins = 72; 
+        if (wins < 12) wins = 12;
+        let losses = 82 - wins;
+
+        let finalsWinProb = 0;
+        let alternativeOutcome = "";
+        
+        if (wins >= 64) {
+            finalsWinProb = Math.round((wins - 60) * 4.5 + 40);
+            alternativeOutcome = "NBA Finals Loss (Defeated 3-4)";
+        } else if (wins >= 56) {
+            finalsWinProb = Math.round((wins - 55) * 3.5 + 12);
+            alternativeOutcome = "Conference Finals Exit (Lost 2-4)";
+        } else if (wins >= 48) {
+            finalsWinProb = Math.round((wins - 47) * 1.2 + 2);
+            alternativeOutcome = "Conference Semifinals (Lost 2-4)";
+        } else if (wins >= 41) {
+            finalsWinProb = Math.round((wins - 40) * 0.2 + 0.5);
+            alternativeOutcome = "First Round Playoff Exit (Lost 1-4)";
+        } else {
+            finalsWinProb = 0;
+            alternativeOutcome = wins >= 36 ? "Play-In Tournament Elimination" : "Missed Postseason Field Entirely";
+        }
+
+        return { record: `${wins}-${losses}`, prob: finalsWinProb, fallback: alternativeOutcome };
+    }
+
+    function displayResults(roster, totalPayroll, budget) {
+        const rosterContainer = document.getElementById('roster-output');
+        const summaryBanner = document.getElementById('summary-banner');
+        rosterContainer.innerHTML = '';
+        
+        if (!roster) {
+            summaryBanner.innerHTML = `<div style="color:#ef4444;"><strong>Allocation Failure:</strong> Financial floor parameters are too restrictive to acquire a positionally compliant 5-man squad. Raise the budget.</div>`;
+            return;
+        }
+
+        const sim = generateSimulation(roster);
+        let bracketStr = totalPayroll > 207.8 ? "Second Apron 🟥" : totalPayroll > 195.9 ? "First Apron 🟨" : "Under Luxury Cap 🟩";
+
+        summaryBanner.innerHTML = `
+            <div><strong>Roster Financial Layout:</strong> $${totalPayroll.toFixed(1)}M / $${budget}M (${bracketStr})</div>
+            <div class="analytics-grid">
+                <div class="analytic-box">
+                    <div style="font-size:0.8rem; color:var(--text-muted);">PROJECTED RECORD</div>
+                    <div class="analytic-val">${sim.record}</div>
+                </div>
+                <div class="analytic-box">
+                    <div style="font-size:0.8rem; color:var(--text-muted);">FINALS WIN PROBABILITY</div>
+                    <div class="analytic-val" style="color:var(--accent-green);">${sim.prob}%</div>
+                </div>
+                <div class="analytic-box">
+                    <div style="font-size:0.8rem; color:var(--text-muted);">MOST LIKELY POSTSEASON VARIANT</div>
+                    <div style="font-size:0.95rem; font-weight:bold; margin-top:4px;">${sim.fallback}</div>
+                </div>
+            </div>
+        `;
+
+        // Sort displayed starting lineup by position for visual tracking clean lines
+        const positionOrder = { "G": 1, "F": 2, "C": 3 };
+        roster.sort((a, b) => positionOrder[a.pos] - positionOrder[b.pos]);
+
+        roster.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            card.innerHTML = `
+                <div class="player-info">
+                    <h3>${p.name} <span class="badge">${p.pos}</span></h3>
+                    <div style="color: var(--text-muted); font-size:0.9rem;">Base Salary: $${p.salary}M | Win Shares: ${p.ws}</div>
+                </div>
+                <div class="player-stats">
+                    <div class="rating-display">${p.overallRating}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Overall Rating</div>
+                </div>
+            `;
+            rosterContainer.appendChild(card);
+        });
+    }
+</script>
+</body>
+</html>
